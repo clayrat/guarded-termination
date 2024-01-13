@@ -98,8 +98,16 @@ apᵏ (later pf▹) (now a)     = later λ α → apᵏ (pf▹ α) (now a)
 apᵏ (later pf▹) (later pa▹) = later λ α → apᵏ (pf▹ α) (pa▹ α)
 -- apᵏ pf pa = pf >>=ᵏ λ f → pa >>=ᵏ (now ∘ f)
 
+delay-by-bindᵏ : (f : A → gPart k B) (x : A) (n : ℕ)
+               → (delay-byᵏ n x) >>=ᵏ f ＝ iter n δᵏ (f x)
+delay-by-bindᵏ f x  zero   = refl
+delay-by-bindᵏ f x (suc n) = ap δᵏ (delay-by-bindᵏ f x n)
+
 Part : 𝒰 → 𝒰
 Part A = ∀ k → gPart k A
+
+pureᵖ : A → Part A
+pureᵖ a k = now a
 
 neverᵖ : Part A
 neverᵖ k = neverᵏ
@@ -108,13 +116,10 @@ neverᵖ k = neverᵏ
 δᵖ p k = δᵏ (p k)
 
 spin : ℕ → Part A → Part A
-spin k = iter k δᵖ
-
-pureᵖ : A → Part A
-pureᵖ a k = now a
+spin n p k = spinᵏ n (p k)
 
 delay-by : ℕ → A → Part A
-delay-by k a = spin k (pureᵖ a)
+delay-by n a k = delay-byᵏ n a
 
 _>>=ᵖ_ : Part A → (A → Part B) → Part B
 _>>=ᵖ_ p f k = p k >>=ᵏ λ a → f a k
