@@ -43,7 +43,7 @@ break p = span (not ∘ p)
 break-length : ∀ (p : A → Bool) x
              → let (y , z) = break p x
                in length x ＝ length y + length z
-break-length p x = span-length (not ∘ p) x 
+break-length p x = span-length (not ∘ p) x
 
 {-
 wordsBy : (A → Bool) → List A → List (List A)
@@ -114,5 +114,5 @@ wordsBy⇓-acc p (hd ∷ tl) (acc rec) with p hd
 
 wordsBy⇓ : (p : A → Bool)
          → ∀ l → wordsBy p l ⇓
-wordsBy⇓ p l = wordsBy⇓-acc p l (Acc-on length l $ Wf-< (length l))         
+wordsBy⇓ p l = wordsBy⇓-acc p l (Acc-on length l $ Wf-< (length l))
 
