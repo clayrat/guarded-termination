@@ -9,7 +9,6 @@ open import Data.Nat.DivMod
 open import Data.Nat.DivMod.Base
 open import Data.Bool
 open import Data.Dec
-open import Correspondences.Wellfounded
 
 open import Later
 open import Clocked.Partial

@@ -4,8 +4,9 @@ module GCD where
 open import Prelude hiding (_<_)
 open import Data.Empty
 open import Data.Nat
-open import Data.Nat.Div
 open import Data.Nat.Order.Inductive
+open import Data.Nat.DivMod
+open import Data.Nat.DivMod.Inductive
 open import Correspondences.Wellfounded
 
 open import Later
@@ -45,7 +46,7 @@ gcd m n k = gcdᵏ m n
 gcd-refl : ∀ m → gcd m m ⇓ᵖ m
 gcd-refl    zero   = ∣ 0 , refl ∣₁
 gcd-refl m@(suc _) = ∣ 1 , (fun-ext λ κ → ap (λ q → q m m) (fix-path gcdᵏ-body)
-                                        ∙ ap (δᵏ ∘ gcdᵏ m) (n%n＝0 m)) ∣₁ 
+                                        ∙ ap (δᵏ ∘ gcdᵏ m) (n%n＝0 m)) ∣₁
 
 gcd-<-comm : ∀ m n → m < n → gcd m n ＝⇓ gcd n m
 gcd-<-comm m n@(suc _) m<n =
@@ -55,7 +56,7 @@ gcd-<-comm m n@(suc _) m<n =
 
 gcd-comm : ∀ m n → gcd m n ＝⇓ gcd n m
 gcd-comm m n with ≤-split m n
-... | inl      m<n  = gcd-<-comm m n m<n 
+... | inl      m<n  = gcd-<-comm m n m<n
 ... | inr (inl n<m) = ＝⇓-sym (gcd-<-comm n m n<m)
 ... | inr (inr e)   = subst (λ q → gcd m q ＝⇓ gcd q m) e ＝⇓-refl
 
