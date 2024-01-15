@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module WordsBy where
+module Examples.WordsBy where
 
 open import Prelude hiding (_<_)
 open import Data.Bool

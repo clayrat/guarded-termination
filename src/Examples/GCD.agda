@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module GCD where
+module Examples.GCD where
 
 open import Prelude hiding (_<_)
 open import Data.Empty

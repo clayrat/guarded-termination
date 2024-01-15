@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module Ackermann where
+module Examples.Ackermann where
 
 open import Prelude hiding (_<_)
 open import Data.Nat

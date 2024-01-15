@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module F91 where
+module Examples.F91 where
 
 open import Prelude hiding (_<_)
 open import Data.Empty
