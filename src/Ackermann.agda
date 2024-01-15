@@ -2,14 +2,9 @@
 module Ackermann where
 
 open import Prelude hiding (_<_)
-open import Data.Empty
 open import Data.Nat
 open import Data.Nat.Order.Inductive
-open import Data.Bool
-open import Data.Dec
-open import Data.Sum
 open import Correspondences.Wellfounded
-open import Meta.Variadic
 
 open import Later
 open import Clocked.Partial
@@ -61,9 +56,9 @@ data _×<_ (_<ₗ_ : Corr² (A , A) ℓ) (_<ᵣ_ : Corr² (B , B) ℓ′) : Corr
 
 -- termination
 
-ack⇓ : ∀ m n → Acc (_×<_ _<_ _<_) (m , n) → ack m n ⇓
-ack⇓    zero      n      _        = (suc n) , ∣ 0 , refl ∣₁
-ack⇓ m@(suc m-1)  zero  (acc rec) =
+ack⇓-acc : ∀ m n → Acc (_×<_ _<_ _<_) (m , n) → ack m n ⇓
+ack⇓-acc    zero      n      _        = (suc n) , ∣ 0 , refl ∣₁
+ack⇓-acc m@(suc m-1)  zero  (acc rec) =
   second
     (λ {x} →
       map λ where
@@ -75,9 +70,9 @@ ack⇓ m@(suc m-1)  zero  (acc rec) =
                                ＝⟨ ap δᵏ (happly e κ) ⟩
                              delay-byᵏ (suc k) x
                                ∎)
-    (ack⇓ m-1 1 (rec (m-1 , 1) (l< (s≤s ≤-refl))))
-ack⇓ m@(suc m-1) n@(suc n-1) (acc rec) =
-  let (x , x⇓) = ack⇓ m n-1 (rec (m , n-1) (r≤ (s≤s ≤-refl))) in
+    (ack⇓-acc m-1 1 (rec (m-1 , 1) (l< (s≤s ≤-refl))))
+ack⇓-acc m@(suc m-1) n@(suc n-1) (acc rec) =
+  let (x , x⇓) = ack⇓-acc m n-1 (rec (m , n-1) (r≤ (s≤s ≤-refl))) in
   second
     (λ {x = y} →
        map² (λ where
@@ -96,4 +91,7 @@ ack⇓ m@(suc m-1) n@(suc n-1) (acc rec) =
                                      delay-byᵏ (suc (k1 + k2)) y
                                        ∎)
              x⇓)
-    (ack⇓ m-1 x (rec (m-1 , x) (l< (s≤s ≤-refl))))
+    (ack⇓-acc m-1 x (rec (m-1 , x) (l< (s≤s ≤-refl))))
+
+ack⇓ : ∀ m n → ack m n ⇓
+ack⇓ m n = ack⇓-acc m n (×-wellFounded Wf-< Wf-< (m , n))
