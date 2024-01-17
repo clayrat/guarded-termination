@@ -41,7 +41,7 @@ private variable
 
 data _×<_ (_<ₗ_ : Corr² (A , A) ℓ) (_<ᵣ_ : Corr² (B , B) ℓ′) : Corr² ((A × B) , (A × B)) (level-of-type A ⊔ level-of-type B ⊔ ℓ ⊔ ℓ′) where
   l< : ∀ {x₁ y₁ x₂ y₂} (x₁<x₂ : x₁ <ₗ x₂) → _×<_ _<ₗ_ _<ᵣ_ (x₁ , y₁) (x₂ , y₂)
-  r≤ : ∀ {x y₁ y₂} (y₁<y₂ : y₁ <ᵣ y₂) → _×<_ _<ₗ_ _<ᵣ_ (x  , y₁) (x  , y₂)
+  r≤ : ∀ {x y₁ y₂}     (y₁<y₂ : y₁ <ᵣ y₂) → _×<_ _<ₗ_ _<ᵣ_ (x  , y₁) (x  , y₂)
 
 ×-wellFounded : {_<ₗ_ : Corr² (A , A) ℓ} {_≤ᵣ_ : Corr² (B , B) ℓ′}
               → Wf _<ₗ_ → Wf _≤ᵣ_ → Wf (_×<_ _<ₗ_ _≤ᵣ_)
