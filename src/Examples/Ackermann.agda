@@ -24,7 +24,7 @@ ack m@(suc m-1) (suc n-1) = ack m-1 (ack m n-1)
 ackᵏ-body : ▹ κ (ℕ → ℕ → gPart κ ℕ) → ℕ → ℕ → gPart κ ℕ
 ackᵏ-body a▹    zero      n        = now (suc n)
 ackᵏ-body a▹   (suc m-1)  zero     = later (a▹ ⊛ next m-1 ⊛ next 1)
-ackᵏ-body a▹ m@(suc m-1) (suc n-1) = later ((_>>=ᵏ_) ⍉ (a▹ ⊛ next m ⊛ next n-1) ⊛ (a▹ ⊛ next m-1))
+ackᵏ-body a▹ m@(suc m-1) (suc n-1) = later ((_=<<ᵏ_) ⍉ (a▹ ⊛ next m-1) ⊛ (a▹ ⊛ next m ⊛ next n-1))
 
 ackᵏ : ℕ → ℕ → gPart κ ℕ
 ackᵏ = fix ackᵏ-body
@@ -51,8 +51,8 @@ data _×<_ (_<ₗ_ : Corr² (A , A) ℓ) (_<ᵣ_ : Corr² (B , B) ℓ′) : Corr
   ×-acc : ∀ {x y}
         → Acc _<ₗ_ x → Acc _≤ᵣ_ y
         → ∀ ab → _×<_ _<ₗ_ _≤ᵣ_ ab (x , y) → Acc (_×<_ _<ₗ_ _≤ᵣ_) ab
-  ×-acc (acc rx)  ay      (a , b) (l< x₁<x₂) = acc (×-acc (rx a x₁<x₂) (wr b))
-  ×-acc  ax      (acc ry) (a , b) (r≤ y₁<y₂) = acc (×-acc ax (ry b y₁<y₂))
+  ×-acc    (acc rx)  ay      (a , b) (l< x₁<x₂) = acc (×-acc (rx a x₁<x₂) (wr b))
+  ×-acc ax@(acc _)  (acc ry) (a , b) (r≤ y₁<y₂) = acc (×-acc ax (ry b y₁<y₂))
 
 -- termination
 
@@ -80,9 +80,9 @@ ack⇓-acc m@(suc m-1) n@(suc n-1) (acc rec) =
                    suc (k1 + k2) , fun-ext λ κ →
                                      ackᵏ m n
                                        ＝⟨ ap (λ q → q m n) (fix-path ackᵏ-body) ⟩
-                                     δᵏ (⌜ ackᵏ m n-1 ⌝ >>=ᵏ ackᵏ m-1)
+                                     δᵏ (ackᵏ m-1 =<<ᵏ ⌜ ackᵏ m n-1 ⌝)
                                        ＝⟨ ap! (happly e1 κ) ⟩
-                                     δᵏ (delay-byᵏ k1 x >>=ᵏ ackᵏ m-1)
+                                     δᵏ (ackᵏ m-1 =<<ᵏ delay-byᵏ k1 x)
                                        ＝⟨ ap δᵏ (delay-by-bindᵏ (ackᵏ m-1) x k1) ⟩
                                      spinᵏ (suc k1) ⌜ ackᵏ m-1 x ⌝
                                        ＝⟨ ap! (happly e2 κ) ⟩

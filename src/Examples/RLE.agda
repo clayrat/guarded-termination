@@ -1,7 +1,8 @@
 {-# OPTIONS --guarded #-}
 module Examples.RLE where
 
-open import Prelude hiding (_<_)
+import Prelude as P hiding (_<_ ; Tactic-bishop-finite ; ord→is-discrete)
+open P
 open import Data.Bool
 open import Data.Dec
 open import Data.Nat
@@ -53,15 +54,15 @@ map-throughᵏ f = fix (map-throughᵏ-body f)
 map-through : (A → List A → B × List A) → List A → Part (List B)
 map-through f l κ = map-throughᵏ f l
 
-compress-span : {dA : is-discrete A}
+compress-span : ⦃ dA : is-discrete A ⦄
               → A → List A → (ℕ × A) × List A
-compress-span {dA} hd tl =
-  let (p , s) = span (λ a → ⌊ is-discrete-β dA a hd ⌋) tl in
+compress-span {A} hd tl =
+  let (p , s) = span {A = A} (λ a → ⌊ _≟_ a hd ⌋) tl in
   ((suc (length p)) , hd) , s
 
-rle : {dA : is-discrete A}
+rle : ⦃ dA : is-discrete A ⦄
     → List A → Part (List (ℕ × A))
-rle {dA} = map-through (compress-span {dA = dA})
+rle = map-through compress-span
 
 -- termination
 
@@ -94,13 +95,15 @@ map-through⇓ : (f : A → List A → B × List A)
              → ∀ l → map-through f l ⇓
 map-through⇓ f prf l = map-through-acc⇓ f prf l (Acc-on length l $ Wf-< (length l))
 
-compress-span-prf : {dA : is-discrete A}
-                  → (a : A) → (as : List A) → length (compress-span {dA = dA} a as .snd) ≤ length as
-compress-span-prf {dA} a as =
-  subst (length (compress-span {dA = dA} a as .snd) ≤_)
-        (sym (span-length (λ x → ⌊ is-discrete-β dA x a ⌋) as))
+compress-span-prf : ⦃ dA : is-discrete A ⦄
+                  → (a : A) → (as : List A)
+                  → length (compress-span a as .snd) ≤ length as
+compress-span-prf a as =
+  subst (length (compress-span a as .snd) ≤_)
+        (sym (span-length (λ x → ⌊ x ≟ a ⌋) as))
         ≤-+-l
 
-rle⇓ : {dA : is-discrete A}
-     → (as : List A) → rle {dA = dA} as ⇓
-rle⇓ {dA} as = map-through⇓ (compress-span {dA = dA}) (compress-span-prf {dA = dA}) as
+rle⇓ : ⦃ dA : is-discrete A ⦄
+     → (as : List A) → rle as ⇓
+rle⇓ as = map-through⇓ compress-span compress-span-prf as
+

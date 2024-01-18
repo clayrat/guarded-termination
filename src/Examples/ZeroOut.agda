@@ -18,7 +18,7 @@ zeroOut (suc n) = zeroOut (zeroOut n)
 
 zeroOutᵏ-body : ▹ κ (ℕ → gPart κ ℕ) → ℕ → gPart κ ℕ
 zeroOutᵏ-body z▹  zero   = now zero
-zeroOutᵏ-body z▹ (suc n) = later ((_>>=ᵏ_) ⍉ (z▹ ⊛ next n) ⊛ z▹)
+zeroOutᵏ-body z▹ (suc n) = later ((_=<<ᵏ_) ⍉ z▹ ⊛ (z▹ ⊛ next n))
 
 zeroOutᵏ : ℕ → gPart κ ℕ
 zeroOutᵏ = fix zeroOutᵏ-body
@@ -36,9 +36,9 @@ zeroOut⇓ (suc n) =
              (suc k) , (fun-ext λ κ →
                                    zeroOutᵏ (suc n)
                                      ＝⟨ ap (λ q → q (suc n)) (fix-path zeroOutᵏ-body)  ⟩
-                                   δᵏ (⌜ zeroOutᵏ n ⌝ >>=ᵏ zeroOutᵏ)
+                                   δᵏ (zeroOutᵏ =<<ᵏ ⌜ zeroOutᵏ n ⌝)
                                      ＝⟨ ap! (happly e κ) ⟩
-                                   δᵏ (delay-byᵏ k 0 >>=ᵏ zeroOutᵏ)
+                                   δᵏ (zeroOutᵏ =<<ᵏ delay-byᵏ k 0)
                                      ＝⟨ ap δᵏ (delay-by-bindᵏ zeroOutᵏ 0 k) ⟩
                                    delay-byᵏ (suc k) 0
                                      ∎))

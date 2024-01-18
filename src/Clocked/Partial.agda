@@ -89,6 +89,10 @@ _>>=ᵏ_ : gPart k A → (A → gPart k B) → gPart k B
 now x   >>=ᵏ f = f x
 later x >>=ᵏ f = later λ α → x α >>=ᵏ f
 
+-- sugar
+_=<<ᵏ_ : (A → gPart k B) → gPart k A → gPart k B
+f =<<ᵏ p = p >>=ᵏ f
+
 mapᵏ : (A → B) → gPart k A → gPart k B
 mapᵏ f (now a)   = now (f a)
 mapᵏ f (later p) = later λ α → mapᵏ f (p α)
@@ -149,6 +153,9 @@ delay-by n a k = delay-byᵏ n a
 
 _>>=ᵖ_ : Part A → (A → Part B) → Part B
 _>>=ᵖ_ p f k = p k >>=ᵏ λ a → f a k
+
+_=<<ᵖ_ : Part A → (A → Part B) → Part B
+_=<<ᵖ_ p f k = (λ a → f a k) =<<ᵏ p k
 
 mapᵖ : (A → B) → Part A → Part B
 mapᵖ f p k = mapᵏ f (p k)
