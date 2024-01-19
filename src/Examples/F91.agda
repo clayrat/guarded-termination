@@ -47,7 +47,7 @@ f91-n>100⇓ n n>100 =
           f91ᵏ n
             ＝⟨ ap (λ q → q n) (fix-path f91ᵏ-body) ⟩
           (if ⌜ n ≤ᵇ 100 ⌝ then δᵏ (f91ᵏ =<<ᵏ f91ᵏ (11 + n)) else now (n ∸ 10))
-            ＝⟨ ap! (reflects-false (≤-reflects n 100) (<≃≱ .fst n>100)) ⟩
+            ＝⟨ ap! (¬⟦-⟧ᵇ≃false .fst $ true-reflects reflects-not $ reflects-false (≤-reflects n 100) (<≃≱ .fst n>100)) ⟩
           now (n ∸ 10)
             ∎) ∣₁
 
@@ -63,11 +63,11 @@ f91-suc-90≤n≤100 n k n≥90 n≤100 =
           f91ᵏ n
             ＝⟨ ap (λ q → q n) (fix-path f91ᵏ-body) ⟩
           (if ⌜ n ≤ᵇ 100 ⌝ then δᵏ (f91ᵏ =<<ᵏ f91ᵏ (11 + n)) else now (n ∸ 10))
-            ＝⟨ ap! (reflects-true (≤-reflects n 100) n≤100) ⟩
+            ＝⟨ ap! (⟦-⟧ᵇ≃true .fst $ reflects-true (≤-reflects n 100) n≤100) ⟩
           δᵏ (f91ᵏ =<<ᵏ f91ᵏ (11 + n))
             ＝⟨ ap (λ q → δᵏ (f91ᵏ =<<ᵏ q (11 + n))) (fix-path f91ᵏ-body) ⟩
           δᵏ (f91ᵏ =<<ᵏ (if ⌜ n ≤ᵇ 89 ⌝ then δᵏ (f91ᵏ =<<ᵏ f91ᵏ (22 + n)) else now (suc n)))
-            ＝⟨ ap! (reflects-false (≤-reflects n 89) (<→≱ (<≃suc≤ .fst n≥90))) ⟩
+            ＝⟨ ap! (¬⟦-⟧ᵇ≃false .fst $ true-reflects reflects-not $ reflects-false (≤-reflects n 89) (<→≱ (<≃suc≤ .fst n≥90))) ⟩
           δᵏ (f91ᵏ (suc n))
             ＝⟨ ap δᵏ (happly e κ) ⟩
           delay-byᵏ (suc m) k
@@ -77,14 +77,14 @@ f91＝91-100-n≤10 : ∀ n
                  → n ≤ 10
                  → f91 (100 ∸ n) ⇓ᵖ 91
 f91＝91-100-n≤10  zero   n≤10 =
-  f91-suc-90≤n≤100 100 91 (true-reflects (≤-reflects 90 100) refl) ≤-refl ∣ 0 , refl ∣₁
+  f91-suc-90≤n≤100 100 91 (true-reflects (≤-reflects 90 100) tt) ≤-refl ∣ 0 , refl ∣₁
 f91＝91-100-n≤10 (suc n) n≤10 =
   f91-suc-90≤n≤100 (99 ∸ n) 91
     (subst (90 ≤_) (m+[n∸p]＝m+n∸p 90 9 n (≤-peel n≤10)) $
-     true-reflects (≤-reflects 90 (90 + (9 ∸ n))) refl)
+     true-reflects (≤-reflects 90 (90 + (9 ∸ n))) tt)
     (≤-∸-l-≃ {p = n} .fst z≤) $
   subst (λ q → f91 q ⇓ᵖ 91)
-        (sym $ suc-∸ n 99 (≤-trans ≤-ascend (≤-trans n≤10 (true-reflects (≤-reflects 10 99) refl)))) $
+        (sym $ suc-∸ n 99 (≤-trans ≤-ascend (≤-trans n≤10 (true-reflects (≤-reflects 10 99) tt)))) $
   f91＝91-100-n≤10 n (≤-trans ≤-ascend n≤10)
 
 opaque
@@ -113,7 +113,8 @@ f91＝91-·11 (suc k) n k11<100 n≥90-k11 n≤100-k11 =
                  f91ᵏ n
                    ＝⟨ ap (λ q → q n) (fix-path f91ᵏ-body) ⟩
                  (if ⌜ n ≤ᵇ 100 ⌝ then δᵏ (f91ᵏ =<<ᵏ f91ᵏ (11 + n)) else now (n ∸ 10))
-                   ＝⟨ ap! (reflects-true (≤-reflects n 100) $
+                   ＝⟨ ap! (⟦-⟧ᵇ≃true .fst $
+                           reflects-true (≤-reflects n 100) $
                            ≤-trans n≤100-k11 $
                            (∸≤≃≤+ {n = k · 11} ₑ⁻¹) .fst $
                            subst (89 ≤_) (+-assoc 89 11 (k · 11) ∙ +-comm 100 (k · 11)) $
@@ -128,8 +129,8 @@ f91＝91-·11 (suc k) n k11<100 n≥90-k11 n≤100-k11 =
                    ＝⟨ ap δᵏ (sym (iter-add s s91 δᵏ (now 91))) ⟩
                  (delay-byᵏ (suc (s + s91)) 91)
                    ∎)
-    (f91＝91-90≤n≤100 91 (true-reflects (≤-reflects 90 91) refl)
-                         (true-reflects (≤-reflects 91 100) refl))
+    (f91＝91-90≤n≤100 91 (true-reflects (≤-reflects 90 91) tt)
+                         (true-reflects (≤-reflects 91 100) tt))
     (f91＝91-·11 k (11 + n)
                 (<-trans <-+-lr k11<100)
                 ((≤-∸-l-≃ ∙ₑ ≤-∸-l-≃ {p = k · 11}) .fst n≥90-k11)
@@ -146,7 +147,7 @@ f91＝91-n≤100 n n≤100 with ≤-dec 90 n
   f91＝91-·11 ((100 ∸ n) / 11) n (prf1 n) (prf2 n n<90) (prf3 n n<90)
   where
   prf1 : ∀ n → (100 ∸ n) / 11 · 11 < 100
-  prf1  zero   = true-reflects (<-reflects 99 100) refl
+  prf1  zero   = true-reflects (<-reflects 99 100) tt
   prf1 (suc n) = ≤-<-trans (m/n*n≤m (99 ∸ n) 11)
                            ((≤-∸-l-≃ {p = n} ∙ₑ ≤≃<suc) .fst z≤)
 
@@ -156,13 +157,13 @@ f91＝91-n≤100 n n≤100 with ≤-dec 90 n
     (∸≤≃≤+ {n = 100 ∸ (n + (100 ∸ n) % 11)} ₑ⁻¹) .fst $
     subst (90 ≤_) (m∸[n∸p]＝m∸n+p 100 (n + (100 ∸ n) % 11) n ≤-+-r
                     (≤-+ ((≤≃<suc ₑ⁻¹) .fst n<90)
-                         (<→≤ (m%n<n (100 ∸ n) 11 (true-reflects (<-reflects 0 11) refl))))) $
+                         (<→≤ (m%n<n (100 ∸ n) 11 (true-reflects (<-reflects 0 11) tt))))) $
     subst (λ q → 90 ≤ 100 ∸ (q ∸ n)) (+-comm ((100 ∸ n) % 11) n) $
     subst (λ q → 90 ≤ 100 ∸ q) (sym $ +-cancel-∸-r ((100 ∸ n) % 11) n) $
-    (≤-∸-r-≃ {m = (100 ∸ n) % 11} (true-reflects (<-reflects 0 90) refl) ₑ⁻¹) .fst $
+    (≤-∸-r-≃ {m = (100 ∸ n) % 11} (true-reflects (<-reflects 0 90) tt) ₑ⁻¹) .fst $
     subst (_≤ 100) (+-comm 90 ((100 ∸ n) % 11)) $
     ((≤-+≃2l {p = 90} ∙ₑ ≤≃<suc) ₑ⁻¹) .fst $
-    m%n<n (100 ∸ n) 11 (true-reflects (<-reflects 0 11) refl)
+    m%n<n (100 ∸ n) 11 (true-reflects (<-reflects 0 11) tt)
 
   prf3 : ∀ n → n < 90 → n ≤ 100 ∸ (100 ∸ n) / 11 · 11
   prf3    zero   _    = z≤
@@ -171,7 +172,7 @@ f91＝91-n≤100 n n≤100 with ≤-dec 90 n
     subst (λ q → q + n ≤ 100) (∸-+-assoc n 100 ((100 ∸ n) % 11) ∙ sym ([m/n]*n＝ (100 ∸ n) 11)) $
     subst (_≤ 100) (m∸[n∸p]＝m∸n+p 100 (n + (100 ∸ n) % 11) n ≤-+-r
                         (≤-+ ((≤≃<suc ₑ⁻¹) .fst n<90)
-                             (<→≤ (m%n<n (100 ∸ n) 11 (true-reflects (<-reflects 0 11) refl))))) $
+                             (<→≤ (m%n<n (100 ∸ n) 11 (true-reflects (<-reflects 0 11) tt))))) $
     (∸≤≃≤+ {n = n + (100 ∸ n) % 11 ∸ n} ₑ⁻¹) .fst ≤-+-l
 
 f91⇓ : ∀ n → f91 n ⇓
