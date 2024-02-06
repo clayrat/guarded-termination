@@ -26,7 +26,13 @@ module Examples.DFS
   (acy : Wf λ x y → Has x (sucs y))
   where
 
--- TODO smth
+private variable
+  κ : Cl
+
+succ : A → A → 𝒰 ℓ
+succ x y = Has x (sucs y)
+
+-- TODO smth / copypasta
 
 has : A → List A → Bool
 has = elem (λ x y → ⌊ x ≟ y ⌋)
@@ -48,27 +54,6 @@ Subset xs ys = ∀ z → Has z xs → Has z ys
 Subset-refl : ∀ xs → Subset xs xs
 Subset-refl xs z = id
 
--- well-founded DFS
-
-succ : A → A → 𝒰 ℓ
-succ x y = Has x (sucs y)
-
-mutual
-  dfs : (x : A) → (accu : List A) → (ac : Acc succ x) → List A
-  dfs x accu ac = if has x accu then accu else x ∷ dfs-list (sucs x) accu ac (Subset-refl (sucs x))
-
-  -- an inlined left fold
-  dfs-list : (l : List A) → (accu : List A) → {x : A} → (ac : Acc succ x) → Subset l (sucs x) → List A
-  dfs-list  []     accu ac           sub = accu
-  dfs-list (y ∷ l) accu ac@(acc rec) sub =
-    dfs-list l
-      (dfs y accu (rec y (sub y (here refl))))
-      ac
-      λ z Hz → sub z (there Hz)
-
-dfs0 : A → List A
-dfs0 x = dfs x [] (acy x)
-
 succ-closed : List A → 𝒰 ℓ
 succ-closed l = ∀ x y → Has x l → succ y x → Has y l
 
@@ -79,6 +64,24 @@ star-sc : ∀ l → succ-closed l
         → Has y l
 star-sc l sc x .x hx  ε             = hx
 star-sc l sc x  y hx (_◅_ {b} h st) = sc b y (star-sc l sc x b hx st) h
+
+-- well-founded DFS
+
+mutual
+  dfs : (x : A) → (a : List A) → (ac : Acc succ x) → List A
+  dfs x a ac = if has x a then a else x ∷ dfs-list (sucs x) a ac (Subset-refl (sucs x))
+
+  -- an inlined left fold
+  dfs-list : (l a : List A) → {x : A} → (ac : Acc succ x) → Subset l (sucs x) → List A
+  dfs-list  []     a     ac           sub = a
+  dfs-list (y ∷ l) a {x} ac@(acc rec) sub =
+    dfs-list l
+      (dfs y a (rec y (sub y (here refl))))
+      {x} ac
+      λ z Hz → sub z (there Hz)
+
+dfs0 : A → List A
+dfs0 x = dfs x [] (acy x)
 
 dfs-correct : (x : A) → (l : List A) → (ac : Acc succ x)
             → succ-closed l
@@ -150,3 +153,62 @@ dfs0-correct x y =
     [ (λ h → absurd (¬Any-[] h)) , id ]ᵤ ∘ f
   , g ∘ inr
 
+-- coinductive
+
+-- TODO move + generalize level
+foldlᵏ : {B : 𝒰 ℓ}
+       → (B → A → ▹ κ (gPart κ B))
+       → B → List A → gPart κ B
+foldlᵏ f x []       = now x
+foldlᵏ f x (a ∷ as) = later (((λ q → foldlᵏ f q as) =<<ᵏ_) ⍉ f x a)
+
+-- TODO we should probably have some combinators for foldlᵏ
+
+dfs-listᵏ-body : ▹ κ (A → List A → gPart κ (List A))
+               → List A → List A → gPart κ (List A)
+dfs-listᵏ-body d▹ l a = foldlᵏ (λ y b → d▹ ⊛ next b ⊛ next y) a l
+
+dfsᵏ-body : ▹ κ (A → List A → gPart κ (List A))
+          → A → List A → gPart κ (List A)
+dfsᵏ-body d▹ x a = if has x a then now a else mapᵏ (x ∷_) (dfs-listᵏ-body d▹ (sucs x) a)
+
+dfsᵏ : A → List A → gPart κ (List A)
+dfsᵏ = fix dfsᵏ-body
+
+dfsᶜ : A → List A → Part (List A)
+dfsᶜ x a κ = dfsᵏ x a
+
+-- termination
+
+dfs-listᵏ : List A → List A → gPart κ (List A)
+dfs-listᵏ = dfs-listᵏ-body (dfix dfsᵏ-body)
+
+dfs-listᶜ : List A → List A → Part (List A)
+dfs-listᶜ l a κ = dfs-listᵏ l a
+
+mutual
+  dfsᶜ⇓ : (x : A) → (a : List A) → Acc succ x → dfsᶜ x a ⇓
+  dfsᶜ⇓ x a ac with has x a
+  ... | true  = a , ∣ 0 , refl ∣₁
+  ... | false =
+    let (q , q⇓) = dfs-listᶜ⇓ (sucs x) a ac (Subset-refl (sucs x)) in
+    (x ∷ q) , (map⇓ (x ∷_) q⇓)
+
+  dfs-listᶜ⇓ : (l a : List A) → {x : A} → Acc succ x → Subset l (sucs x) → dfs-listᶜ l a ⇓
+  dfs-listᶜ⇓ []      a     ac           sub = a , ∣ 0 , refl ∣₁
+  dfs-listᶜ⇓ (y ∷ l) a {x} ac@(acc rec) sub =
+    let (q , q⇓) = dfsᶜ⇓ y a (rec y (sub y (here refl)))
+        (z , z⇓) = dfs-listᶜ⇓ l q {x} ac (λ z Hz → sub z (there Hz))
+      in
+    z , (map (λ qke → let (qk , qe) = qke in  -- splitting this directly breaks termination checker for some reason
+                   (suc qk)
+                 , fun-ext λ κ →
+                     dfs-listᵏ (y ∷ l) a
+                       ＝⟨⟩
+                     later ((dfs-listᵏ l =<<ᵏ_) ⍉ (dfix dfsᵏ-body ⊛ next y ⊛ next a))
+                       ＝⟨ ap later (▹-ext λ α → ap (dfs-listᵏ l =<<ᵏ_) λ i → pfix dfsᵏ-body i α y a) ⟩
+                     δᵏ (dfs-listᵏ l =<<ᵏ dfsᵏ y a)
+                       ＝⟨ ap δᵏ (happly qe κ) ⟩
+                     delay-byᵏ (suc qk) z
+                       ∎)
+             (bind⇓ (dfs-listᶜ l) q⇓ z⇓))
