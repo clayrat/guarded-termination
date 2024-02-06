@@ -106,34 +106,34 @@ iterᶜ⇓ x pre = iterᶜ-acc⇓ x pre (wf-> x)
 lfpᶜ⇓ : lfpᶜ ⇓
 lfpᶜ⇓ = iterᶜ⇓ bot (≤-bot (F bot))
 
-lfpᶜ-eq : Allᵖ (λ q → F q ＝ q) lfpᶜ
-lfpᶜ-eq κ =
-  to-induction _>_ wf->
-    (λ a → a ≤ F a → Acc _>_ a → gAllᵖ κ (λ q → F q ＝ q) (iterᵏ a))
-    go bot (≤-bot (F bot)) (wf-> bot)
+-- we can decouple property proofs from the Acc machinery
+iterᶜ-eq : (x : A) → x ≤ F x → Allᵖ (λ q → F q ＝ q) (iterᶜ x)
+iterᶜ-eq x le κ = fix {k = κ} go x le
   where
-  go : (x : A)
-     → ((y : A) → y > x → y ≤ F y → Acc _>_ y → gAllᵖ κ (λ q → F q ＝ q) (iterᵏ y))
-     → x ≤ F x → Acc _>_ x → gAllᵖ κ (λ q → F q ＝ q) (iterᵏ x)
-  go x ih pre (acc rec) with x ≟ F x
+  go : ▹ κ ((x : A) → x ≤ F x → gAllᵖ κ (λ q → F q ＝ q) (iterᵏ x))
+     → (x : A) → x ≤ F x → gAllᵖ κ (λ q → F q ＝ q) (iterᵏ x)
+  go ih▹ x le with x ≟ F x
   ... | yes e = gAll-now (sym e)
-  ... | no ne =
+  ... | no _  =
     gAll-later λ α →
       transport (λ i → gAllᵖ κ (λ q → F q ＝ q) (pfix iterᵏ-body (~ i) α (F x))) $
-      ih (F x) (ne ∘ sym , pre) (Fmono x (F x) pre) (rec (F x) (ne ∘ sym , pre))
+      ih▹ α (F x) (Fmono x (F x) le)
 
-lfpᶜ-least : ∀ z → F z ＝ z → Allᵖ (_≤ z) lfpᶜ
-lfpᶜ-least z fz κ =
-  to-induction _>_ wf->
-    (λ a → a ≤ F a → Acc _>_ a → a ≤ z → gAllᵖ κ (_≤ z) (iterᵏ a))
-    go bot (≤-bot (F bot)) (wf-> bot) (≤-bot z)
+lfpᶜ-eq : Allᵖ (λ q → F q ＝ q) lfpᶜ
+lfpᶜ-eq = iterᶜ-eq bot (≤-bot (F bot))
+
+iterᶜ-least : ∀ z → F z ＝ z
+            → ∀ x → x ≤ z → Allᵖ (_≤ z) (iterᶜ x)
+iterᶜ-least z ze x le κ = fix {k = κ} go x le
   where
-  go : (a : A)
-     → ((b : A) → b > a → b ≤ F b → Acc _>_ b → b ≤ z → gAllᵖ κ (_≤ z) (iterᵏ b))
-     → a ≤ F a → Acc _>_ a → a ≤ z → gAllᵖ κ (_≤ z) (iterᵏ a)
-  go a ih l (acc rec) la with a ≟ F a
-  ... | yes e = gAll-now la
+  go : ▹ κ ((x : A) → x ≤ z → gAllᵖ κ (_≤ z) (iterᵏ x))
+     → (x : A) → x ≤ z → gAllᵖ κ (_≤ z) (iterᵏ x)
+  go ih▹ x xz with x ≟ F x
+  ... | yes _ = gAll-now xz
   ... | no ne =
     gAll-later λ α →
-      transport (λ i → gAllᵖ κ (_≤ z) (pfix iterᵏ-body (~ i) α (F a))) $
-      ih (F a) (ne ∘ sym , l) (Fmono a (F a) l) (rec (F a) (ne ∘ sym , l)) (subst (F a ≤_) fz (Fmono a z la))
+      transport (λ i → gAllᵖ κ (_≤ z) (pfix iterᵏ-body (~ i) α (F x))) $
+      ih▹ α (F x) (subst (F x ≤_) ze (Fmono x z xz))
+
+lfpᶜ-least : ∀ z → F z ＝ z → Allᵖ (_≤ z) lfpᶜ
+lfpᶜ-least z ze = iterᶜ-least z ze bot (≤-bot z)
