@@ -105,6 +105,11 @@ apᵏ (later pf▹) (now a)     = later λ α → apᵏ (pf▹ α) (now a)
 apᵏ (later pf▹) (later pa▹) = later λ α → apᵏ (pf▹ α) (pa▹ α)
 -- apᵏ pf pa = pf >>=ᵏ λ f → pa >>=ᵏ (now ∘ f)
 
+mapᵏ-id : (p : gPart k A)
+        → mapᵏ id p ＝ p
+mapᵏ-id (now a)   = refl
+mapᵏ-id (later p) = ap later (▹-ext λ α → mapᵏ-id (p α))
+
 delay-by-mapᵏ : {f : A → B}
               → (x : A) (n : ℕ)
               → mapᵏ {k = k} f (delay-byᵏ n x) ＝ delay-byᵏ n (f x)

@@ -27,6 +27,7 @@ module Examples.DFS
   where
 
 private variable
+  ℓ″ : Level
   κ : Cl
 
 succ : A → A → 𝒰 ℓ
@@ -110,7 +111,7 @@ dfs-correct = to-induction succ acy (λ z →
       inl
     , [ id
       , (λ p → let (s , syc , scx) = Plus-unsnoc p in
-               star-sc (dfs-list [] accu ac sub) sc s y (accm s scx ¬Any-[]) syc)
+               star-sc accu sc s y (accm s scx ¬Any-[]) syc)
       ]ᵤ
   go-list x ih (w ∷ l) accu ac@(acc rec) sc sub accm y =
     let swx : succ w x
@@ -159,8 +160,8 @@ dfs0-correct x y =
 foldlᵏ : {B : 𝒰 ℓ}
        → (B → A → ▹ κ (gPart κ B))
        → B → List A → gPart κ B
-foldlᵏ f x []       = now x
-foldlᵏ f x (a ∷ as) = later (((λ q → foldlᵏ f q as) =<<ᵏ_) ⍉ f x a)
+foldlᵏ f b []       = now b
+foldlᵏ f b (a ∷ as) = later (((λ q → foldlᵏ f q as) =<<ᵏ_) ⍉ f b a)
 
 -- TODO we should probably have some combinators for foldlᵏ
 
@@ -177,6 +178,9 @@ dfsᵏ = fix dfsᵏ-body
 
 dfsᶜ : A → List A → Part (List A)
 dfsᶜ x a κ = dfsᵏ x a
+
+dfs0ᶜ : A → Part (List A)
+dfs0ᶜ x = dfsᶜ x []
 
 -- termination
 
@@ -212,3 +216,64 @@ mutual
                      delay-byᵏ (suc qk) z
                        ∎)
              (bind⇓ (dfs-listᶜ l) q⇓ z⇓))
+
+dfs0ᶜ⇓ : (x : A) → dfs0ᶜ x ⇓
+dfs0ᶜ⇓ x = dfsᶜ⇓ x [] (acy x)
+
+dfsᶜ-correct : (x : A) → (l : List A)
+             → succ-closed l
+             → Allᵖ (λ q → ∀ y → (Has y q → Has y l ⊎ Star succ y x) × (Has y l ⊎ Star succ y x → Has y q)) (dfsᶜ x l)
+dfsᶜ-correct x l sc κ = fix {k = κ} go x l sc
+  where
+  go-list : ▹ κ ((x : A) → (l : List A) → succ-closed l
+                  → gAllᵖ κ (λ q → (y : A) → (Has y q → Has y l ⊎ Star succ y x) × (Has y l ⊎ Star succ y x → Has y q)) (dfsᵏ x l))
+          → (x : A) → (l : List A) → (accu : List A)
+          → succ-closed accu
+          → (sub : Subset l (sucs x))
+          → (∀ z → succ z x → ¬ Has z l → Has z accu)
+          → gAllᵖ κ (λ q → (y : A) → (Has y q → Has y accu ⊎ Plus succ y x) × (Has y accu ⊎ Plus succ y x → Has y q)) (dfs-listᵏ l accu)
+  go-list ih▹ x []      accu sc sub accm =
+    gAll-now λ y → (inl , [ id
+                          , (λ p → let (s , syc , scx) = Plus-unsnoc p in
+                              star-sc accu sc s y (accm s scx ¬Any-[]) syc)
+                          ]ᵤ)
+  go-list ih▹ x (w ∷ l) accu sc sub accm =
+    gAll-later λ α →
+      transport (λ i → gAllᵖ κ (λ q → ∀ y → (Has y q → Has y accu ⊎ Plus succ y x) × (Has y accu ⊎ Plus succ y x → Has y q))
+                             (dfs-listᵏ l =<<ᵏ pfix dfsᵏ-body (~ i) α w accu)) $
+      all->>=ᵏ (ih▹ α w accu sc)
+        λ {a} pa →
+          all-weakenᵏ
+            (λ {a′} fg′ y →
+                 (λ hya′ → [ (λ hya → [ inl , (λ y←w → inr (Star-◅ y←w (sub w (here refl)))) ]ᵤ (pa y .fst hya)) , inr ]ᵤ (fg′ y .fst hya′))
+               , (λ h+p → fg′ y .snd ([ (λ hyac → inl (pa y .snd (inl hyac))) , inr ]ᵤ h+p)))
+            (go-list ih▹ x l a
+                      (λ s t hs hts → pa t .snd ([ (λ hha → inl (sc s t hha hts)) , (λ str → inr (hts ◅ str)) ]ᵤ (pa s .fst hs)))
+                      (λ z Hz → sub z (there Hz))
+                      λ z Hz Nz → pa z .snd (Dec.rec (λ e → inr (subst (Star succ z) e ε))
+                                                     (λ ne → inl (accm z Hz (¬Any-∷ (ne ∘ sym) Nz)))
+                                                     (z ≟ w)))
+
+  go : ▹ κ ((x : A) → (l : List A) → succ-closed l
+            → gAllᵖ κ (λ q → (y : A) → (Has y q → Has y l ⊎ Star succ y x) × (Has y l ⊎ Star succ y x → Has y q)) (dfsᵏ x l))
+     → (x : A) → (l : List A) → succ-closed l
+     → gAllᵖ κ (λ q → (y : A) → (Has y q → Has y l ⊎ Star succ y x) × (Has y l ⊎ Star succ y x → Has y q)) (dfsᵏ x l)
+  go ih▹ x l sc with has x l | recall (λ q → has q l) x
+  ... | true  | ⟪ e ⟫ =
+    gAll-now λ y → (inl , [ id , star-sc l sc x y (true-reflects (has-r x l) (subst ⟦_⟧ᵇ (sym e) tt)) ]ᵤ)
+  ... | false | _     =
+    all-mapᵏ
+      (λ fg y → (λ where
+                     (here e) → inr (subst (Star succ y) (sym e) ε)
+                     (there hy) → [ inl , inr ∘ Plus→Star ]ᵤ (fg y .fst hy))
+                , [ there ∘ fg y .snd ∘ inl , [ there ∘ fg y .snd ∘ inr , (here ∘ sym) ]ᵤ ∘ Star→Plus＝ ]ᵤ)
+      (go-list ih▹ x (sucs x) l sc
+                    (Subset-refl (sucs x)) (λ z Hz Nz → absurd (Nz Hz)))
+
+dfs0ᶜ-correct : (x : A)
+              → Allᵖ (λ q → ∀ y → (Has y q → Star succ y x) × (Star succ y x → Has y q)) (dfs0ᶜ x)
+dfs0ᶜ-correct x =
+  all-weaken
+    (λ fg y → ([ (λ h → absurd (¬Any-[] h)) , id ]ᵤ ∘ fg y .fst)
+              , (fg y .snd ∘ inr))
+    (dfsᶜ-correct x [] (λ _ _ h _ → absurd (¬Any-[] h)))
